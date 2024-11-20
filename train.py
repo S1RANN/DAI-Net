@@ -25,6 +25,8 @@ from models.enhancer import RetinexNet
 from utils.DarkISP import Low_Illumination_Degrading
 from PIL import Image
 
+from tqdm import tqdm
+
 parser = argparse.ArgumentParser(
     description='DSFD face Detector Training With Pytorch')
 train_set = parser.add_mutually_exclusive_group()
@@ -196,6 +198,8 @@ def train():
     corr_mat = None
     for epoch in range(start_epoch, cfg.EPOCHES):
         losses = 0
+        
+        progress_bar = tqdm(enumerate(train_loader), total=len(train_loader), leave=False)
 
         for batch_idx, (images, targets, _) in enumerate(train_loader):
             images = Variable(images.cuda() / 255.)
@@ -253,6 +257,10 @@ def train():
                     torch.save(dsfd_net.state_dict(),
                                os.path.join(save_folder, file))
             iteration += 1
+            
+            progress_bar.set_description(f"Epoch [{epoch}/{cfg.EPOCHES}]")
+            progress_bar.set_postfix(loss=loss.item())
+            
         # if local_rank == 0:
         if (epoch + 1) >= 0:
             val(epoch, net, dsfd_net, net_enh, criterion)
